@@ -13,6 +13,8 @@ Adapted from the original [design doc][1]:
 
 [1]: http://cr.yp.to/cdb.html
 
+This repo is based on https://github.com/colinmarc/cdb
+
 Usage
 -----
 
