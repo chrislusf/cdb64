@@ -5,6 +5,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"sync"
 	"syscall"
 	"testing"
 	"time"
@@ -41,6 +42,32 @@ func TestGet(t *testing.T) {
 		require.NoError(t, err, msg)
 		println("key:", string(record[0]), "value:", string(value), "nil:", value == nil)
 		assert.Equal(t, string(record[1]), string(value), msg)
+	}
+}
+
+func TestGetParallel(t *testing.T) {
+	db, err := Open("./test/test.cdb")
+	require.NoError(t, err)
+	require.NotNil(t, db)
+
+	records := append(append(expectedRecords, expectedRecords...), expectedRecords...)
+	shuffle(records)
+
+	for _, record := range records {
+		msg := "while fetching " + string(record[0])
+
+		var wg sync.WaitGroup
+		for i := 0; i < 100; i++ {
+			wg.Add(1)
+			go func(t *testing.T) {
+				defer wg.Done()
+				value, err := db.Get(record[0])
+				require.NoError(t, err, msg)
+				println("key:", string(record[0]), "value:", string(value), "nil:", value == nil)
+				assert.Equal(t, string(record[1]), string(value), msg)
+			}(t)
+		}
+		wg.Wait()
 	}
 }
 
