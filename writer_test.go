@@ -56,7 +56,7 @@ func TestWritesReadableFnv(t *testing.T) {
 	require.NoError(t, err)
 	defer os.Remove(f.Name())
 
-	writer, err := NewWriter(f, fnv.New64a())
+	writer, err := NewWriter(f, fnv.New64a)
 	require.NoError(t, err)
 	require.NotNil(t, writer)
 
@@ -115,7 +115,7 @@ func TestWritesRandomFnv(t *testing.T) {
 	require.NoError(t, err)
 	defer os.Remove(f.Name())
 
-	writer, err := NewWriter(f, fnv.New64a())
+	writer, err := NewWriter(f, fnv.New64a)
 	require.NoError(t, err)
 	require.NotNil(t, writer)
 
@@ -158,7 +158,7 @@ func BenchmarkPutFnv(b *testing.B) {
 		os.Remove(f.Name())
 	}()
 
-	writer, err := NewWriter(f, fnv.New64a())
+	writer, err := NewWriter(f, fnv.New64a)
 	require.NoError(b, err)
 
 	benchmarkPut(b, writer)

@@ -2,6 +2,7 @@ package cdb64
 
 import (
 	"encoding/binary"
+	"hash"
 )
 
 const start = 5381
@@ -10,7 +11,7 @@ type cdbHash struct {
 	uint64
 }
 
-func newCDBHash() *cdbHash {
+func newCDBHash() hash.Hash64 {
 	return &cdbHash{start}
 }
 

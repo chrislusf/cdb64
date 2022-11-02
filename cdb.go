@@ -5,7 +5,6 @@ database, but without the 4GB size limitation.
 For more information on cdb, see the original design doc at http://cr.yp.to/cdb.html.
 
 This is based on the code from https://github.com/colinmarc/cdb
-
 */
 package cdb64
 
@@ -22,12 +21,13 @@ const (
 )
 
 type Header [256]table
+type HashFunc func() hash.Hash64
 
 // CDB represents an open CDB database. It can only be used for reads; to
 // create a database, use Writer.
 type CDB struct {
 	reader io.ReaderAt
-	hasher hash.Hash64
+	hasher HashFunc
 	header Header
 }
 
@@ -52,9 +52,9 @@ func Open(path string) (*CDB, error) {
 // If hasher is nil, it will default to the CDB hash function. If a database
 // was created with a particular hash function, that same hash function must be
 // passed to New, or the database will return incorrect results.
-func New(reader io.ReaderAt, hasher hash.Hash64) (*CDB, error) {
+func New(reader io.ReaderAt, hasher HashFunc) (*CDB, error) {
 	if hasher == nil {
-		hasher = newCDBHash()
+		hasher = newCDBHash
 	}
 
 	cdb := &CDB{reader: reader, hasher: hasher}
@@ -68,9 +68,10 @@ func New(reader io.ReaderAt, hasher hash.Hash64) (*CDB, error) {
 
 // Get returns the value for a given key, or nil if it can't be found.
 func (cdb *CDB) Get(key []byte) ([]byte, error) {
-	cdb.hasher.Reset()
-	cdb.hasher.Write(key)
-	hash := cdb.hasher.Sum64()
+	hasher := cdb.hasher()
+	hasher.Reset()
+	hasher.Write(key)
+	hash := hasher.Sum64()
 
 	table := cdb.header[hash&0xff]
 	if table.length == 0 {
