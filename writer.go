@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"hash"
 	"io"
 	"os"
 	"sync"
@@ -18,7 +17,7 @@ var ErrTooMuchData = errors.New("CDB files are limited to 4GB of data")
 // Close or Freeze must be called to finalize the database, or the resulting
 // file will be invalid.
 type Writer struct {
-	hasher       hash.Hash64
+	hasher       HashFunc
 	writer       io.WriteSeeker
 	entries      [256][]entry
 	finalizeOnce sync.Once
@@ -47,7 +46,7 @@ func Create(path string) (*Writer, error) {
 // NewWriter opens a CDB database for the given io.WriteSeeker.
 //
 // If hasher is nil, it will default to the CDB hash function.
-func NewWriter(writer io.WriteSeeker, hasher hash.Hash64) (*Writer, error) {
+func NewWriter(writer io.WriteSeeker, hasher HashFunc) (*Writer, error) {
 	// Leave 256 * 8 * 2 bytes for the index at the head of the file.
 	_, err := writer.Seek(0, os.SEEK_SET)
 	if err != nil {
@@ -60,7 +59,7 @@ func NewWriter(writer io.WriteSeeker, hasher hash.Hash64) (*Writer, error) {
 	}
 
 	if hasher == nil {
-		hasher = newCDBHash()
+		hasher = newCDBHash
 	}
 
 	return &Writer{
@@ -79,9 +78,10 @@ func (cdb *Writer) Put(key, value []byte) error {
 	entrySize := int64(16 + len(key) + len(value))
 
 	// Record the entry in the hash table, to be written out at the end.
-	cdb.hasher.Reset()
-	cdb.hasher.Write(key)
-	hash := cdb.hasher.Sum64()
+	hasher := cdb.hasher()
+	hasher.Reset()
+	hasher.Write(key)
+	hash := hasher.Sum64()
 	table := hash & 0xff
 
 	entry := entry{hash: hash, offset: uint64(cdb.bufferedOffset)}
